@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Weather App</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        @import "bootstrap-icons/font/bootstrap-icons.css";
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+        body {
+            background: linear-gradient(135deg, #22d26b, #08a4a7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 90vh;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        .heading {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .weather-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            width: 90%;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            flex: 1;
+            color: white;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        .search-box input::placeholder {
+            color: white;
+        }
+
+        .search-box button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: white;
+            padding: 5px;
+        }
+
+        .weather-icon img {
+            width: 80px;
+        }
+
+        .temperature {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .weather-details {
+            margin-top: 20px;
+        }
+
+        #errorMessage {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="heading">Open Weather</h1>
+
+    <div class="search-box">
+        <input type="text" id="city" placeholder="Enter Area or City">
+        <button onclick="getWeather()" class="btn">
+            <i class="bi bi-search"></i>>
+        </button>
+    </div>
+    
+    <div class="weather-container" id="weatherContainer">
+        <h2 class="temperature">
+            <span id="temp">--°C</span> 
+            <span id="tempIcon">🌡</span>
+        </h2>
+        
+        <h4 id="cityName"></h4>
+
+        <div class="weather-details">
+            <p>🌫 Humidity: <span id="humidity">--%</span></p>
+            <p>💨 Wind Speed: <span id="windSpeed">-- km/h</span></p>
+        </div>
+
+        <p id="errorMessage"></p>
+    </div>
+
+    <script>
+        const apiKey = "012d1b9eaa53eb47ec38270715c549bf";
+
+        async function fetchCoordinates(location) {
+            let geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${apiKey}`;
+            let response = await fetch(geoUrl);
+            let data = await response.json();
+            if (data.length === 0) {
+                showError("Location not found! Enter a valid area or city.");
+                return null;
+            }
+            return data[0];
+        }
+
+        async function fetchWeather(lat, lon, name) {
+            let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+            let response = await fetch(url);
+            let data = await response.json();
+            if (data.cod !== 200) {
+                showError("Error fetching weather data.");
+                return;
+            }
+            hideError();
+            updateWeatherUI(data, name);
+        }
+
+        async function getWeather() {
+            let location = document.getElementById("city").value.trim();
+            if (!location) {
+                showError("Please enter a location.");
+                return;
+            }
+            let geoData = await fetchCoordinates(location);
+            if (geoData) {
+                fetchWeather(geoData.lat, geoData.lon, `${geoData.name}, ${geoData.state || ''}, ${geoData.country}`);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById("errorMessage").innerHTML = message;
+            document.getElementById("errorMessage").style.display = "block";
+        }
+
+        function hideError() {
+            document.getElementById("errorMessage").style.display = "none";
+        }
+
+        function updateWeatherUI(data, locationName) {
+            document.getElementById("temp").innerHTML = `${data.main.temp}°C`;
+            document.getElementById("humidity").innerHTML = `${data.main.humidity}%`;
+            document.getElementById("windSpeed").innerHTML = `${data.wind.speed} km/h`;
+            document.getElementById("cityName").innerHTML = locationName;
+            document.getElementById("weatherContainer").style.display = "block"; 
+
+            let temperature = data.main.temp;
+            let tempIcon = document.getElementById("tempIcon");
+            if (temperature > 30) {
+                tempIcon.innerHTML = "☀️";  
+            } else if (temperature >= 15) {
+                tempIcon.innerHTML = "🌤";  
+            } else {
+                tempIcon.innerHTML = "☁️";  
+            }
+        }
+    </script>    
+</body>
+</html>
